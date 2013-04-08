@@ -71,7 +71,10 @@ class WP_Twitter_API_Settings {
 	 */
 	public function load_options() {
 		if ( !$this->options )
-			$this->options = (array) get_option( self::HANDLE, array() );
+			$this->options = (array) get_option( self::HANDLE, array(
+			'consumer_key' => '',
+			'consumer_secret' => ''
+		) );
 	}
 
 
@@ -169,8 +172,8 @@ class WP_Twitter_API_Settings {
 	 */
 	public function sanitize_options( $in ) {
 		$out = array(
-			'consumer_key'            => preg_replace( '/[^a-z0-9]/i', '', $in['consumer_key'] ),
-			'consumer_secret'         => preg_replace( '/[^a-z0-9]/i', '', $in['consumer_secret'] )
+			'consumer_key'    => preg_replace( '/[^a-z0-9]/i', '', $in['consumer_key'] ),
+			'consumer_secret' => preg_replace( '/[^a-z0-9]/i', '', $in['consumer_secret'] )
 		);
 		return $out;
 	}
@@ -184,23 +187,30 @@ class WP_Twitter_API_Settings {
 	public function view_settings_page() {
 	?><div class="wrap">
 		<h2><?php _e( 'Twitter API for WordPress', self::HANDLE ); ?></h2>
-		<p><?php _e( 'Enter your consumer key and secret from <a href="https://dev.twitter.com/apps" target="_blank">https://dev.twitter.com/apps</a>:', self::HANDLE ); ?></p>
+		<p><?php _e( 'Enter your consumer key and secret from <a href="https://dev.twitter.com/apps" target="_blank">https://dev.twitter.com/apps</a> (be sure to set a callback URL when adding your app):', self::HANDLE ); ?></p>
 		<form action="options.php" method="post">
 			<?php settings_fields( self::HANDLE ); ?>
 			<?php do_settings_sections( self::HANDLE ); ?>
 			<?php submit_button(); ?>
 		</form>
 
-		<?php if ( !$this->authorized_to ) : ?>
-		<h2>Authentication Necessary</h2>
-		<p>To complete the Twitter setup, you'll need to authenticate this application to use your Twitter account to make API requests</p>
-		<form method="post">
-			<input type="submit" name="tafwp_authenticate" value="Authenticate with Twitter" class="button-secondary" />
-		</form>
-		<?php else : ?>
-		<p>Looks like you're good to go! You're authorized as <strong><a href="https://twitter.com/<?php echo esc_attr( $this->authorized_to ) ?>" target="_blank">@<?php echo esc_html( $this->authorized_to ) ?></a></strong></p>
-		<pre><?php # print_r( tapi_get_user_timeline( 'senyob' ) ) ?></pre>
-		<?php endif; ?>
+		<?php if ( $this->options['consumer_key'] && $this->options['consumer_secret'] ) : ?>
+
+			<?php if ( !$this->authorized_to ) : ?>
+
+				<h2><?php _e( 'Authentication Necessary', self::HANDLE ); ?></h2>
+				<p><?php _e( "To complete the Twitter setup, you'll need to authenticate this application to use your Twitter account to make API requests", self::HANDLE ); ?></p>
+				<form method="post">
+					<input type="submit" name="tafwp_authenticate" value="Authenticate with Twitter" class="button-secondary" />
+				</form>
+
+			<?php else : ?>
+
+				<p><?php printf( __( "Looks like you're good to go! You're authorized as %s", self::HANDLE ), '<strong><a href="https://twitter.com/' . esc_attr( $this->authorized_to ) . '" target="_blank">@' . esc_html( $this->authorized_to ) . '</a></strong>' ) ?></p>
+
+			<?php endif ?>
+
+		<?php endif ?>
 	</div>
 	<?php
 	}
