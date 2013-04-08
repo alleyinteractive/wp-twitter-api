@@ -216,4 +216,4 @@ class WP_Twitter_API_Settings {
 function WP_Twitter_API_Settings() {
 	return WP_Twitter_API_Settings::instance();
 }
-add_action( 'plugins_loaded', 'WP_Twitter_API_Settings' );
+add_action( 'after_setup_theme', 'WP_Twitter_API_Settings' );
