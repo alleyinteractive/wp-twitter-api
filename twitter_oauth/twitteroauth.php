@@ -1,5 +1,8 @@
 <?php
 
+if( !class_exists( 'WP_Http' ) )
+    include_once( ABSPATH . WPINC. '/class-http.php' ) or die 'WP_Http not found';
+
 /*
  * Abraham Williams (abraham@abrah.am) http://abrah.am
  *
@@ -194,40 +197,59 @@ class TwitterOAuth {
    *
    * @return API results
    */
-  function http($url, $method, $postfields = NULL) {
-    $this->http_info = array();
-    $ci = curl_init();
-    /* Curl settings */
-    curl_setopt($ci, CURLOPT_USERAGENT, $this->useragent);
-    curl_setopt($ci, CURLOPT_CONNECTTIMEOUT, $this->connecttimeout);
-    curl_setopt($ci, CURLOPT_TIMEOUT, $this->timeout);
-    curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
-    curl_setopt($ci, CURLOPT_HTTPHEADER, array('Expect:'));
-    curl_setopt($ci, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
-    curl_setopt($ci, CURLOPT_HEADERFUNCTION, array($this, 'getHeader'));
-    curl_setopt($ci, CURLOPT_HEADER, FALSE);
+  function http( $url, $method, $postfields = NULL ) {
 
-    switch ($method) {
-      case 'POST':
-        curl_setopt($ci, CURLOPT_POST, TRUE);
-        if (!empty($postfields)) {
-          curl_setopt($ci, CURLOPT_POSTFIELDS, $postfields);
-        }
-        break;
-      case 'DELETE':
-        curl_setopt($ci, CURLOPT_CUSTOMREQUEST, 'DELETE');
-        if (!empty($postfields)) {
-          $url = "{$url}?{$postfields}";
-        }
-    }
+    $request_args = array(
+      'method' => $method,
+      'timeout' => apply_filters( 'http_request_timeout', $this->connecttimeout ),
+      'user-agent' => apply_filters( 'http_headers_useragent', $this->useragent  ),
+      'headers' => array( 'Expect:' ),
+      'body' => $postfields,
+      'sslverify' => $this->ssl_verifypeer,
+    );
 
-    curl_setopt($ci, CURLOPT_URL, $url);
-    $response = curl_exec($ci);
-    $this->http_code = curl_getinfo($ci, CURLINFO_HTTP_CODE);
-    $this->http_info = array_merge($this->http_info, curl_getinfo($ci));
-    $this->url = $url;
-    curl_close ($ci);
-    return $response;
+    $request = new WP_Http;
+    $result = $request->request( $url, $request_args );
+
+    $this->http_code = $result['response'][0]['code'];
+    $this->http_info = $result['headers'];
+    $this->url = $result['body'];
+
+    return $result;
+
+    // $this->http_info = array();
+    // $ci = curl_init();
+    // /* Curl settings */
+    // curl_setopt($ci, CURLOPT_USERAGENT, $this->useragent);
+    // curl_setopt($ci, CURLOPT_CONNECTTIMEOUT, $this->connecttimeout);
+    // curl_setopt($ci, CURLOPT_TIMEOUT, $this->timeout);
+    // curl_setopt($ci, CURLOPT_RETURNTRANSFER, TRUE);
+    // curl_setopt($ci, CURLOPT_HTTPHEADER, array('Expect:'));
+    // curl_setopt($ci, CURLOPT_SSL_VERIFYPEER, $this->ssl_verifypeer);
+    // curl_setopt($ci, CURLOPT_HEADERFUNCTION, array($this, 'getHeader'));
+    // curl_setopt($ci, CURLOPT_HEADER, FALSE);
+
+    // switch ($method) {
+    //   case 'POST':
+    //     curl_setopt($ci, CURLOPT_POST, TRUE);
+    //     if (!empty($postfields)) {
+    //       curl_setopt($ci, CURLOPT_POSTFIELDS, $postfields);
+    //     }
+    //     break;
+    //   case 'DELETE':
+    //     curl_setopt($ci, CURLOPT_CUSTOMREQUEST, 'DELETE');
+    //     if (!empty($postfields)) {
+    //       $url = "{$url}?{$postfields}";
+    //     }
+    // }
+
+    // curl_setopt($ci, CURLOPT_URL, $url);
+    // $response = curl_exec($ci);
+    // $this->http_code = curl_getinfo($ci, CURLINFO_HTTP_CODE);
+    // $this->http_info = array_merge($this->http_info, curl_getinfo($ci));
+    // $this->url = $url;
+    // curl_close ($ci);
+    // return $response;
   }
 
   /**
