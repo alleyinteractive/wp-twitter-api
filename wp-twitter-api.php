@@ -30,6 +30,12 @@ require_once( 'settings.php' );
 # Our meat and potatoes
 require_once( 'class-wp-twitter-api.php' );
 
+# A class for adding functionality to tweets
+require_once( 'class-tapi-tweet.php' );
+
+# Like WP_Query, but for tweets
+require_once( 'class-tapi-query.php' );
+
 # Helper functions
 require_once( 'functions.php' );
 

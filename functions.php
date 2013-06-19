@@ -64,3 +64,85 @@ function tapi_get_list_timeline( $list, $owner = false, $count = 20 ) {
 		$list = "slug=$list&owner_screen_name=$owner";
 	return WP_Twitter_API()->get_list_timeline( "count={$count}&{$list}" );
 }
+
+
+
+
+function tapi_get_tweet_id( $tweet = false ) {
+	if ( ! $tweet )
+		return $GLOBALS['tapi_tweet_id'];
+	return $tweet->id;
+}
+
+
+function tapi_get_author( $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	return $tweet->user;
+}
+
+
+function tapi_get_author_name( $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	return $tweet->user->name;
+}
+
+
+function tapi_get_author_screen_name( $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	return $tweet->user->screen_name;
+}
+
+
+function tapi_get_author_avatar_url( $protocol = 'http', $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	return 'http' == $protocol ? $tweet->user->profile_image_url : $tweet->user->profile_image_url_https;
+}
+
+
+function tapi_get_author_permalink( $tweet = false ) {
+	return "https://twitter.com/" . tapi_get_author_screen_name();
+}
+
+
+function tapi_get_text( $state = 'filtered', $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	return $tweet->text( $filtered );
+}
+
+
+function tapi_get_timestamp( $format = 'raw', $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	if ( 'raw' == $format )
+		return $tweet->created_at;
+
+	$timestamp = strtotime( $tweet->created_at );
+
+	if ( 'short' == $format )
+		return date( 'j M y', $timestamp );
+
+	if ( 'int' == $format )
+		return $timestamp;
+
+	if ( 'age' == $format )
+		return $tweet->age( $tweet );
+
+	return date( $format, $timestamp );
+}
+
+
+function tapi_get_permalink( $tweet = false ) {
+	return "https://twitter.com/" . tapi_get_author_screen_name( $tweet ) . '/status/' . tapi_get_tweet_id( $tweet );
+}
+
