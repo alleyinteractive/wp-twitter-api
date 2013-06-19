@@ -66,6 +66,12 @@ function tapi_get_list_timeline( $list, $owner = false, $count = 20 ) {
 }
 
 
+function tapi_get_tweet( $tweet = false, $args = array() ) {
+	if ( $tweet )
+		return TAPI_Tweet::get_instance( $tweet, $args );
+	else
+		return $GLOBALS['tapi_tweet'];
+}
 
 
 function tapi_get_tweet_id( $tweet = false ) {

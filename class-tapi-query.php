@@ -61,11 +61,12 @@ class TAPI_Query {
 		$this->tweets = WP_Twitter_API()->get( $this->path, $this->query_args );
 		if ( is_array( $this->tweets ) && ! empty( $this->tweets ) ) {
 			foreach ( $this->tweets as &$tweet ) {
-				$tweet = new TAPI_Tweet( $tweet );
+				$tweet = TAPI_Tweet::get_instance( $tweet );
 			}
 		}
 		$this->tweet_count = count( $this->tweets );
 	}
+
 
 
 	/**

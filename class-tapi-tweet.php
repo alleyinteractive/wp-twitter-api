@@ -64,7 +64,7 @@ class TAPI_Tweet {
 		if ( 'raw' == $state )
 			return $this->tweet->text;
 		else
-			return $this->filter_text( $this->tweet );
+			return $this->filtered_text();
 	}
 
 
@@ -77,7 +77,7 @@ class TAPI_Tweet {
 	 * @param int $length
 	 * @return string
 	 */
-	public function mb_substr_replace( $string, $replacement, $start, $length ) {
+	private function _mb_substr_replace( $string, $replacement, $start, $length ) {
 		return mb_substr( $string, 0, $start ) . $replacement . mb_substr( $string, $start + $length );
 	}
 
@@ -88,32 +88,37 @@ class TAPI_Tweet {
 	 * @param array $media Required. Array of media entity objects in a tweet
 	 * @return array $parsed_entities. Array of parsed media entity objects in tweet
 	 */
-	public function filter_text( $tweet ) {
-		# initialize an empty array to hold the parsed entities
-		$entities = array();
+	public function filtered_text() {
+		if ( ! $this->filtered_text ) {
 
-		if ( !empty( $tweet->entities->hashtags ) ) # parse the hashtags
-			$entities = $entities + $this->parse_hashtag( $tweet->entities->hashtags );
+			# initialize an empty array to hold the parsed entities
+			$entities = array();
 
-		if ( !empty( $tweet->entities->urls ) ) # parse the urls
-			$entities = $entities + $this->parse_url_link( $tweet->entities->urls );
+			if ( ! empty( $this->tweet->entities->hashtags ) ) # parse the hashtags
+				$entities = $entities + $this->parse_hashtag( $this->tweet->entities->hashtags );
 
-		if ( !empty( $tweet->entities->user_mentions ) ) # parse the user mentions
-			$entities = $entities + $this->parse_user_mention( $tweet->entities->user_mentions );
+			if ( ! empty( $this->tweet->entities->urls ) ) # parse the urls
+				$entities = $entities + $this->parse_url_link( $this->tweet->entities->urls );
 
-		if ( !empty( $tweet->entities->media ) ) # parse the media links
-			$entities = $entities + $this->parse_media_link( $tweet->entities->media );
+			if ( ! empty( $this->tweet->entities->user_mentions ) ) # parse the user mentions
+				$entities = $entities + $this->parse_user_mention( $this->tweet->entities->user_mentions );
 
-		# because we're using the location index of the substring to begin the replacement, we must reverse the order and work backwards.
-		krsort( $entities );
+			if ( ! empty( $this->tweet->entities->media ) ) # parse the media links
+				$entities = $entities + $this->parse_media_link( $this->tweet->entities->media );
 
-		# replace the entities in the tweet text with the parsed versions
-		foreach ( $entities as $entity ) {
-			$tweet->text = $this->mb_substr_replace( $tweet->text, $entity->replace, $entity->start, $entity->length );
+			# because we're using the location index of the substring to begin the replacement, we must reverse the order and work backwards.
+			krsort( $entities );
+
+			# replace the entities in the tweet text with the parsed versions
+			$this->filtered_text = $this->tweet->text;
+			foreach ( $entities as $entity ) {
+				$this->filtered_text = $this->_mb_substr_replace( $this->filtered_text, $entity->replace, $entity->start, $entity->length );
+			}
+
 		}
 
 		# return the processed tweet text
-		return $tweet->text;
+		return $this->filtered_text;
 	}
 
 
@@ -130,7 +135,7 @@ class TAPI_Tweet {
 			$entity = new stdclass();
 			$entity->start = $hashtag->indices[0];
 			$entity->length = $hashtag->indices[1] - $hashtag->indices[0];
-			$entity->replace = sprintf( $hashtag_link_pattern, strtolower( $hashtag->text ), $hashtag->text );
+			$entity->replace = sprintf( $hashtag_link_pattern, esc_attr( strtolower( $hashtag->text ) ), esc_html( $hashtag->text ) );
 			# use the start index as the array key for sorting purposes
 			$parsed_entities[ $entity->start ] = $entity;
 		}
@@ -151,7 +156,7 @@ class TAPI_Tweet {
 			$entity = new stdclass();
 			$entity->start = $url->indices[0];
 			$entity->length = $url->indices[1] - $url->indices[0];
-			$entity->replace = sprintf( $url_link_pattern, $url->url, $url->expanded_url, $url->display_url );
+			$entity->replace = sprintf( $url_link_pattern, esc_url( $url->url ), esc_attr( $url->expanded_url ), esc_html( $url->display_url ) );
 			# use the start index as the array key for sorting purposes
 			$parsed_entities[ $entity->start ] = $entity;
 		}
@@ -172,7 +177,7 @@ class TAPI_Tweet {
 			$entity = new stdclass();
 			$entity->start = $user_mention->indices[0];
 			$entity->length = $user_mention->indices[1] - $user_mention->indices[0];
-			$entity->replace = sprintf($user_mention_link_pattern, strtolower($user_mention->screen_name), $user_mention->name, $user_mention->screen_name);
+			$entity->replace = sprintf( $user_mention_link_pattern, esc_attr( strtolower( $user_mention->screen_name ) ), esc_attr( $user_mention->name ), esc_html( $user_mention->screen_name ) );
 			# use the start index as the array key for sorting purposes
 			$parsed_entities[ $entity->start ] = $entity;
 		}
@@ -193,7 +198,7 @@ class TAPI_Tweet {
 			$entity = new stdclass();
 			$entity->start = $mediaitem->indices[0];
 			$entity->length = $mediaitem->indices[1] - $mediaitem->indices[0];
-			$entity->replace = sprintf( $media_link_pattern, $mediaitem->url, $mediaitem->expanded_url, $mediaitem->display_url );
+			$entity->replace = sprintf( $media_link_pattern, esc_url( $mediaitem->url ), esc_attr( $mediaitem->expanded_url ), esc_html( $mediaitem->display_url ) );
 			# use the start index as the array key for sorting purposes
 			$parsed_entities[ $entity->start ] = $entity;
 		}
@@ -220,6 +225,34 @@ class TAPI_Tweet {
 			return date( 'j M', $time );
 
 		return date( 'j M y', $time );
+	}
+
+
+	public static function get_instance( $tweet, $args = array() ) {
+		$tapi_obj = null;
+
+		if ( is_object( $tweet ) ) {
+			if ( is_a( $tweet, 'TAPI_Tweet' ) )
+				return $tweet;
+
+			$tapi_obj = wp_cache_get( $tweet->id_str, 'tapi_tweets' );
+		} elseif ( is_numeric( $tweet ) ) {
+			$tapi_obj = wp_cache_get( $tweet, 'tapi_tweets' );
+
+			if ( !$tapi_obj ) {
+				$tweet = WP_Twitter_API()->get( 'statuses/show/' . $tweet, $args );
+			}
+		}
+
+		if ( ! $tapi_obj && is_object( $tweet ) ) {
+			$tapi_obj = new TAPI_Tweet( $tweet );
+			if ( isset( $tweet->retweeted_status ) && is_object( $tweet->retweeted_status ) )
+				$tapi_obj->retweeted_status = new TAPI_Tweet( $tweet->retweeted_status );
+			wp_cache_set( $tweet->id_str, $tapi_obj, 'tapi_tweets', MINUTE_IN_SECONDS );
+			return $tapi_obj;
+		}
+
+		return $tapi_obj;
 	}
 
 }
