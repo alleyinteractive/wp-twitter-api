@@ -58,7 +58,7 @@ class WP_Twitter_API {
 	public function connect() {
 		if ( !$this->api ) {
 			$this->options = (array) get_option( self::HANDLE, array() );
-			if ( !class_exists( 'OAuthRequest' ) ) {
+			if ( !class_exists( 'TAPI_OAuthRequest' ) ) {
 				require_once( 'twitter_oauth/OAuth.php' );
 			}
 			if ( !class_exists( 'TwitterOAuth' ) ) {
