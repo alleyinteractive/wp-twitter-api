@@ -36,16 +36,26 @@ function tapi_get_merged_user_timelines( $screen_names = array(), $count = 20, $
 		foreach ( $screen_names as $screen_name ) {
 			$tweets = array_merge( $tweets, tapi_get_user_timeline( $screen_name, $count ) );
 		}
-		usort( $tweets, function( $a, $b ) {
-			if ( $a->created_at == $b->created_at )
-				return 0;
-			return strtotime( $a->created_at ) < strtotime( $b->created_at ) ? 1 : -1;
-		} );
+		usort( $tweets, 'tapi_sort_merged_tweets' );
 		$tweets = array_slice( $tweets, 0, $count );
 		return $tweets;
 		set_transient( $cache_key, $tweets, $cache_length );
 	}
 	return $tweets;
+}
+
+
+/**
+ * usort function to sort the merged tweets by date
+ *
+ * @param object $a
+ * @param object $b
+ * @return int
+ */
+function tapi_sort_merged_tweets( $a, $b ) {
+	if ( $a->created_at == $b->created_at )
+		return 0;
+	return strtotime( $a->created_at ) < strtotime( $b->created_at ) ? 1 : -1;
 }
 
 
