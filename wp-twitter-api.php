@@ -25,17 +25,21 @@
 
 
 # Setup site options and authentication
-require_once( 'settings.php' );
+
+define( 'TAPI_PATH', dirname( __FILE__ ) );
+define( 'TAPI_URL', trailingslashit( plugins_url( '', __FILE__ ) ) );
+
+require_once( TAPI_PATH . '/settings.php' );
 
 # Our meat and potatoes
-require_once( 'class-wp-twitter-api.php' );
+require_once( TAPI_PATH . '/class-wp-twitter-api.php' );
 
 # A class for adding functionality to tweets
-require_once( 'class-tapi-tweet.php' );
+require_once( TAPI_PATH . '/class-tapi-tweet.php' );
 
 # Like WP_Query, but for tweets
-require_once( 'class-tapi-query.php' );
+require_once( TAPI_PATH . '/class-tapi-query.php' );
 
 # Helper functions
-require_once( 'functions.php' );
+require_once( TAPI_PATH . '/functions.php' );
 
