@@ -212,11 +212,14 @@ class TwitterOAuth {
 			'body'       => $postfields,
 			'sslverify'  => $this->ssl_verifypeer,
 		) );
-		$this->http_code = $result['response']['code'];
-		$this->http_header = $result['headers'];
-		$this->url = $url;
+		if ( ! is_wp_error( $result ) ) {
+			$this->http_code = $result['response']['code'];
+			$this->http_header = $result['headers'];
+			$this->url = $url;
 
-		return $result['body'];
+			return $result['body'];
+		}
+		return '[]';
 	}
 
 }
