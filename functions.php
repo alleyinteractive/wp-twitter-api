@@ -132,7 +132,7 @@ function tapi_get_text( $state = 'filtered', $tweet = false ) {
 	if ( ! $tweet )
 		$tweet = $GLOBALS['tapi_tweet'];
 
-	return $tweet->text( $filtered );
+	return $tweet->text( $state );
 }
 
 
