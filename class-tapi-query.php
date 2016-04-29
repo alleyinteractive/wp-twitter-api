@@ -59,6 +59,11 @@ class TAPI_Query {
 
 	public function query() {
 		$this->tweets = WP_Twitter_API()->get( $this->path, $this->query_args );
+		if ( is_object( $this->tweets ) ) {
+			if ( ! empty( $this->tweets->statuses ) ){
+				$this->tweets = $this->tweets->statuses;
+			}
+		}
 		if ( is_array( $this->tweets ) && ! empty( $this->tweets ) && ! isset( $this->tweets->errors ) ) {
 			foreach ( $this->tweets as &$tweet ) {
 				$tweet = TAPI_Tweet::get_instance( $tweet );
