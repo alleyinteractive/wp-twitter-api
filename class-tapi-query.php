@@ -59,6 +59,7 @@ class TAPI_Query {
 
 	public function query() {
 		$this->tweets = WP_Twitter_API()->get( $this->path, $this->query_args );
+		// For when the request returns an object instead of an array of tweets
 		if ( is_object( $this->tweets ) ) {
 			if ( ! empty( $this->tweets->statuses ) ){
 				$this->tweets = $this->tweets->statuses;
