@@ -11,7 +11,7 @@ class TAPI_OAuthConsumer {
 	public $key;
 	public $secret;
 
-	function __construct( $key, $secret, $callback_url=NULL ) {
+	function __construct( $key, $secret, $callback_url=null ) {
 		$this->key = $key;
 		$this->secret = $secret;
 		$this->callback_url = $callback_url;
@@ -226,7 +226,7 @@ class TAPI_OAuthRequest {
 	public static $version = '1.0';
 	public static $POST_INPUT = 'php://input';
 
-	function __construct( $http_method, $http_url, $parameters=NULL ) {
+	function __construct( $http_method, $http_url, $parameters=null ) {
 		$parameters = ! empty( $parameters ) ? $parameters : array();
 		$parameters = array_merge( TAPI_OAuthUtil::parse_parameters( parse_url( $http_url, PHP_URL_QUERY ) ), $parameters );
 		$this->parameters = $parameters;
@@ -238,7 +238,7 @@ class TAPI_OAuthRequest {
 	/**
 	 * attempt to build up a request from what was passed to the server
 	 */
-	public static function from_request( $http_method=NULL, $http_url=NULL, $parameters=NULL ) {
+	public static function from_request( $http_method=null, $http_url=null, $parameters=null ) {
 		$scheme = ( !isset( $_SERVER['HTTPS'] ) || $_SERVER['HTTPS'] != "on" )
 							? 'http'
 							: 'https';
@@ -289,7 +289,7 @@ class TAPI_OAuthRequest {
 	/**
 	 * pretty much a helper function to set up the request
 	 */
-	public static function from_consumer_and_token( $consumer, $token, $http_method, $http_url, $parameters = NULL ) {
+	public static function from_consumer_and_token( $consumer, $token, $http_method, $http_url, $parameters = null ) {
 		$parameters = ! empty( $parameters ) ? $parameters : array();
 		$defaults = array(
 			"oauth_version"      => TAPI_OAuthRequest::$version,
@@ -381,7 +381,7 @@ class TAPI_OAuthRequest {
 	 */
 	public function get_normalized_http_url() {
 		$parts = parse_url( $this->http_url );
-! empty( $parts[''] ) ? $parts[''] : '';
+
 		$port = ! empty( $parts['port'] ) ? $parts['port'] : '';
 		$scheme = $parts['scheme'];
 		$host = $parts['host'];
@@ -507,7 +507,7 @@ class TAPI_OAuthServer {
 		$consumer = $this->get_consumer( $request );
 
 		// no token required for the initial token request
-		$token = NULL;
+		$token = null;
 
 		$this->check_signature( $request, $consumer, $token );
 
@@ -574,7 +574,7 @@ class TAPI_OAuthServer {
 		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
 			$signature_method = $request->get_parameter( "oauth_signature_method" );
 		} else {
-			$signature_method = NULL;
+			$signature_method = null;
 		}
 
 		if ( !$signature_method ) {
@@ -600,7 +600,7 @@ class TAPI_OAuthServer {
 		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
 			$consumer_key = $request->get_parameter( "oauth_consumer_key" );
 		} else {
-			$consumer_key = NULL;
+			$consumer_key = null;
 		}
 
 		if ( !$consumer_key ) {
@@ -622,7 +622,7 @@ class TAPI_OAuthServer {
 		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
 			$token_field = $request->get_parameter( 'oauth_token' );
 		} else {
-			$token_field = NULL;
+			$token_field = null;
 		}
 
 		$token = $this->data_store->lookup_token( $consumer, $token_type, $token_field );
@@ -642,8 +642,8 @@ class TAPI_OAuthServer {
 			$timestamp = $request->get_parameter( 'oauth_timestamp' );
 			$nonce = $request->get_parameter( 'oauth_nonce' );
 		} else {
-			$timestamp = NULL;
-			$nonce = NULL;
+			$timestamp = null;
+			$nonce = null;
 		}
 
 		$this->check_timestamp( $timestamp );
