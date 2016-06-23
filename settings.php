@@ -160,7 +160,7 @@ class WP_Twitter_API_Settings {
 	 * @return void
 	 */
 	public function field( $args ) {
-		echo '<input type="text" name="' . self::HANDLE . '[' . $args['label_for'] . ']" id="' . $args['label_for'] . '" value="' . $this->options[ $args['label_for'] ] .'" size="60" style="font-family:monospace;font-size:120%;letter-spacing:0.1em" />';
+		echo '<input type="text" name="' .  esc_attr( self::HANDLE . '[' . $args['label_for'] . ']' ) . '" id="' . esc_attr( $args['label_for'] ) . '" value="' . esc_attr( $this->options[ $args['label_for'] ] ) .'" size="60" style="font-family:monospace;font-size:120%;letter-spacing:0.1em" />';
 	}
 
 

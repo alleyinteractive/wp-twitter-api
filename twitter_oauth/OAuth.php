@@ -11,7 +11,7 @@ class TAPI_OAuthConsumer {
 	public $key;
 	public $secret;
 
-	function __construct( $key, $secret, $callback_url=NULL ) {
+	function __construct( $key, $secret, $callback_url=null ) {
 		$this->key = $key;
 		$this->secret = $secret;
 		$this->callback_url = $callback_url;
@@ -226,8 +226,8 @@ class TAPI_OAuthRequest {
 	public static $version = '1.0';
 	public static $POST_INPUT = 'php://input';
 
-	function __construct( $http_method, $http_url, $parameters=NULL ) {
-		@$parameters or $parameters = array();
+	function __construct( $http_method, $http_url, $parameters=null ) {
+		$parameters = ! empty( $parameters ) ? $parameters : array();
 		$parameters = array_merge( TAPI_OAuthUtil::parse_parameters( parse_url( $http_url, PHP_URL_QUERY ) ), $parameters );
 		$this->parameters = $parameters;
 		$this->http_method = $http_method;
@@ -238,16 +238,16 @@ class TAPI_OAuthRequest {
 	/**
 	 * attempt to build up a request from what was passed to the server
 	 */
-	public static function from_request( $http_method=NULL, $http_url=NULL, $parameters=NULL ) {
+	public static function from_request( $http_method=null, $http_url=null, $parameters=null ) {
 		$scheme = ( !isset( $_SERVER['HTTPS'] ) || $_SERVER['HTTPS'] != "on" )
 							? 'http'
 							: 'https';
-		@$http_url or $http_url = $scheme .
+		$http_url = ! empty( $http_url ) ? $http_url : $scheme .
 								  '://' . $_SERVER['HTTP_HOST'] .
 								  ':' .
 								  $_SERVER['SERVER_PORT'] .
 								  $_SERVER['REQUEST_URI'];
-		@$http_method or $http_method = $_SERVER['REQUEST_METHOD'];
+		$http_method = ! empty ( $http_method ) ? $http_method : $_SERVER['REQUEST_METHOD'];
 
 		// We weren't handed any parameters, so let's find the ones relevant to
 		// this request.
@@ -263,7 +263,8 @@ class TAPI_OAuthRequest {
 			// It's a POST request of the proper content-type, so parse POST
 			// parameters and add those overriding any duplicates from GET
 			if ( $http_method == "POST"
-					&& @strstr( $request_headers["Content-Type"], "application/x-www-form-urlencoded" ) ) {
+					&& ! empty( $request_headers["Content-Type"] )
+					&& false !== strpos( $request_headers["Content-Type"], 'application/x-www-form-urlencoded' ) ) {
 				$post_data = TAPI_OAuthUtil::parse_parameters(
 					file_get_contents( self::$POST_INPUT )
 				);
@@ -272,7 +273,8 @@ class TAPI_OAuthRequest {
 
 			// We have a Authorization-header with OAuth data. Parse the header
 			// and add those overriding any duplicates from GET or POST
-			if ( @substr( $request_headers['Authorization'], 0, 6 ) == "OAuth " ) {
+			if ( ! empty( $request_headers['Authorization'] )
+					&& substr( $request_headers['Authorization'], 0, 6 ) == "OAuth " ) {
 				$header_parameters = TAPI_OAuthUtil::split_header(
 					$request_headers['Authorization']
 				);
@@ -287,8 +289,8 @@ class TAPI_OAuthRequest {
 	/**
 	 * pretty much a helper function to set up the request
 	 */
-	public static function from_consumer_and_token( $consumer, $token, $http_method, $http_url, $parameters = NULL ) {
-		@$parameters or $parameters = array();
+	public static function from_consumer_and_token( $consumer, $token, $http_method, $http_url, $parameters = null ) {
+		$parameters = ! empty( $parameters ) ? $parameters : array();
 		$defaults = array(
 			"oauth_version"      => TAPI_OAuthRequest::$version,
 			"oauth_nonce"        => TAPI_OAuthRequest::generate_nonce(),
@@ -380,10 +382,10 @@ class TAPI_OAuthRequest {
 	public function get_normalized_http_url() {
 		$parts = parse_url( $this->http_url );
 
-		$port = @$parts['port'];
+		$port = ! empty( $parts['port'] ) ? $parts['port'] : '';
 		$scheme = $parts['scheme'];
 		$host = $parts['host'];
-		$path = @$parts['path'];
+		$path = ! empty( $parts['path'] ) ? $parts['path'] : '';
 
 		$port or $port = ( $scheme == 'https' ) ? '443' : '80';
 
@@ -505,7 +507,7 @@ class TAPI_OAuthServer {
 		$consumer = $this->get_consumer( $request );
 
 		// no token required for the initial token request
-		$token = NULL;
+		$token = null;
 
 		$this->check_signature( $request, $consumer, $token );
 
@@ -569,8 +571,11 @@ class TAPI_OAuthServer {
 	 * figure out the signature with some defaults
 	 */
 	private function get_signature_method( &$request ) {
-		$signature_method =
-				@$request->get_parameter( "oauth_signature_method" );
+		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
+			$signature_method = $request->get_parameter( "oauth_signature_method" );
+		} else {
+			$signature_method = null;
+		}
 
 		if ( !$signature_method ) {
 			// According to chapter 7 ("Accessing Protected Ressources") the signature-method
@@ -592,7 +597,12 @@ class TAPI_OAuthServer {
 	 * try to find the consumer for the provided request's consumer key
 	 */
 	private function get_consumer( &$request ) {
-		$consumer_key = @$request->get_parameter( "oauth_consumer_key" );
+		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
+			$consumer_key = $request->get_parameter( "oauth_consumer_key" );
+		} else {
+			$consumer_key = null;
+		}
+
 		if ( !$consumer_key ) {
 			throw new TAPI_OAuthException( "Invalid consumer key" );
 		}
@@ -609,7 +619,12 @@ class TAPI_OAuthServer {
 	 * try to find the token for the provided request's token key
 	 */
 	private function get_token( &$request, $consumer, $token_type="access" ) {
-		$token_field = @$request->get_parameter( 'oauth_token' );
+		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
+			$token_field = $request->get_parameter( 'oauth_token' );
+		} else {
+			$token_field = null;
+		}
+
 		$token = $this->data_store->lookup_token( $consumer, $token_type, $token_field );
 		if ( !$token ) {
 			throw new TAPI_OAuthException( "Invalid $token_type token: $token_field" );
@@ -623,8 +638,13 @@ class TAPI_OAuthServer {
 	 */
 	private function check_signature( &$request, $consumer, $token ) {
 		// this should probably be in a different method
-		$timestamp = @$request->get_parameter( 'oauth_timestamp' );
-		$nonce = @$request->get_parameter( 'oauth_nonce' );
+		if ( is_object( $request ) && method_exists( $request, 'get_parameter' ) ) {
+			$timestamp = $request->get_parameter( 'oauth_timestamp' );
+			$nonce = $request->get_parameter( 'oauth_nonce' );
+		} else {
+			$timestamp = null;
+			$nonce = null;
+		}
 
 		$this->check_timestamp( $timestamp );
 		$this->check_nonce( $consumer, $token, $nonce, $timestamp );
