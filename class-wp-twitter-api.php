@@ -137,6 +137,7 @@ class WP_Twitter_API {
 	 */
 	public function get( $url, $params = array(), $defaults = array() ) {
 		$params = wp_parse_args( $params, $defaults );
+		$params = apply_filters( 'wp_twitter_api_query_params', $params, $url );
 		$cache_key = 'tafwp_' . md5( $url . serialize( $params ) );
 		if ( false === ( $response = get_transient( $cache_key ) ) ) {
 			$this->connect();
