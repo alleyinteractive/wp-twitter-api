@@ -137,6 +137,14 @@ class WP_Twitter_API {
 	 */
 	public function get( $url, $params = array(), $defaults = array() ) {
 		$params = wp_parse_args( $params, $defaults );
+		/**
+		 * Filter Twitter GET Params.
+		 *
+		 * Filters the params for the twitter endpoint.
+		 * @param array $params GET params to send.
+		 * @param string $url The API endpoint, e.g. statuses/user_timeline.
+		 */
+		$params = apply_filters( 'wp_twitter_api_query_params', $params, $url );
 		$cache_key = 'tafwp_' . md5( $url . serialize( $params ) );
 		if ( false === ( $response = get_transient( $cache_key ) ) ) {
 			$this->connect();
