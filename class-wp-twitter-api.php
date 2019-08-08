@@ -164,7 +164,8 @@ class WP_Twitter_API {
 	public function get_user_timeline( $params = array() ) {
 		return $this->get( 'statuses/user_timeline', $params, array(
 			'count'       => 20,
-			'include_rts' => 1
+			'include_rts' => 1,
+			'tweet_mode'  => 'extended',
 		) );
 	}
 
@@ -178,7 +179,7 @@ class WP_Twitter_API {
 	public function get_list_timeline( $params = array() ) {
 		return $this->get( 'lists/statuses', $params, array(
 			'count'       => 20,
-			'include_rts' => 1
+			'include_rts' => 1,
 		) );
 	}
 
