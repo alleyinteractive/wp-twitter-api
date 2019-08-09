@@ -132,7 +132,22 @@ function tapi_get_text( $tweet = false ) {
 	if ( ! $tweet )
 		$tweet = $GLOBALS['tapi_tweet'];
 
-	return $tweet->full_text;
+	if ( ! empty( $tweet->full_text ) ) {
+		preg_match_all('/https:\/\/t.co\/[^\s]+/', $tweet->full_text, $matches );
+
+		if ( ! empty( $matches[0] ) ) {
+			$new_string = $tweet->full_text;
+
+			// Loop through an replace matches.
+			foreach ( $matches[0] as $match ) {
+				$new_string = str_replace( $match, wp_kses_post( '<a href="' . $match . '" rel=”nofollow”>' . $match . '</a>' ),  $new_string );
+			}
+
+			return nl2br( $new_string );
+		}
+	}
+
+	return nl2br( $tweet->full_text );
 }
 
 
@@ -217,3 +232,29 @@ function tapi_get_relative_time( $timestamp = '' ) {
 	return $time_string;
 }
 
+/**
+ * Get media for tweet.
+ *
+ * @param object $tweet tweet object.
+ * @return array array of media if it exists.
+ */
+function tapi_get_media_url( $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	// Set empty array.
+	$media_array = [];
+
+	if ( isset( $tweet->entities ) && isset( $tweet->entities->media ) ) {
+
+		foreach ( $tweet->entities->media as $media ) {
+			$media_array[] = $media->media_url_https
+				? $media->media_url_https
+				: $media->media_url;
+
+			return $media_array;
+		}
+	}
+
+	return $media_array;
+}
