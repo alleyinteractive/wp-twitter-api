@@ -128,11 +128,11 @@ function tapi_get_author_permalink( $tweet = false ) {
 }
 
 
-function tapi_get_text( $state = 'filtered', $tweet = false ) {
+function tapi_get_text( $tweet = false ) {
 	if ( ! $tweet )
 		$tweet = $GLOBALS['tapi_tweet'];
 
-	return $tweet->text( $state );
+	return $tweet->full_text;
 }
 
 
