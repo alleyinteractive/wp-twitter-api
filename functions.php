@@ -124,7 +124,7 @@ function tapi_get_author_avatar_url( $protocol = 'http', $tweet = false ) {
 
 
 function tapi_get_author_permalink( $tweet = false ) {
-	return "https://twitter.com/" . tapi_get_author_screen_name();
+	return "https://twitter.com/" . tapi_get_author_screen_name( $tweet );
 }
 
 
