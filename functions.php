@@ -124,15 +124,30 @@ function tapi_get_author_avatar_url( $protocol = 'http', $tweet = false ) {
 
 
 function tapi_get_author_permalink( $tweet = false ) {
-	return "https://twitter.com/" . tapi_get_author_screen_name();
+	return "https://twitter.com/" . tapi_get_author_screen_name( $tweet );
 }
 
 
-function tapi_get_text( $state = 'filtered', $tweet = false ) {
+function tapi_get_text( $tweet = false ) {
 	if ( ! $tweet )
 		$tweet = $GLOBALS['tapi_tweet'];
 
-	return $tweet->text( $state );
+	if ( ! empty( $tweet->full_text ) ) {
+		preg_match_all('/https:\/\/t.co\/[^\s]+/', $tweet->full_text, $matches );
+
+		if ( ! empty( $matches[0] ) ) {
+			$new_string = $tweet->full_text;
+
+			// Loop through an replace matches.
+			foreach ( $matches[0] as $match ) {
+				$new_string = str_replace( $match, wp_kses_post( '<a href="' . $match . '" rel=”nofollow”>' . $match . '</a>' ),  $new_string );
+			}
+
+			return nl2br( $new_string );
+		}
+	}
+
+	return nl2br( $tweet->full_text );
 }
 
 
@@ -152,7 +167,7 @@ function tapi_get_timestamp( $format = 'raw', $tweet = false ) {
 		return $timestamp;
 
 	if ( 'age' == $format )
-		return $tweet->age( $tweet );
+		return tapi_get_relative_time( $tweet->created_at );
 
 	return date( $format, $timestamp );
 }
@@ -162,3 +177,84 @@ function tapi_get_permalink( $tweet = false ) {
 	return "https://twitter.com/" . tapi_get_author_screen_name( $tweet ) . '/status/' . tapi_get_tweet_id( $tweet );
 }
 
+/**
+ * Return relative time string from unix timestamp.
+ *
+ * @param string || int timestamp .ex Fri Aug 09 00:59:06 +0000 2019
+ */
+function tapi_get_relative_time( $timestamp = '' ) {
+
+	// Bail if no timestamp exists.
+	if ( empty( $timestamp ) ) {
+		return;
+	}
+
+	// Setup new time.
+	$now  = new \DateTime();
+	$ago  = new \DateTime( $timestamp );
+	$diff = $now->diff( $ago );
+
+	// Round week down to nearest int.
+	$diff->w = intval( floor( $diff->d / 7 ) );
+
+	// Subtract day from week and set to var.
+	$diff->d -= $diff->w * 7;
+
+	// Set potential string output to array.
+	$time_string_array = array(
+		'y' => 'year',
+		'm' => 'month',
+		'w' => 'week',
+		'd' => 'day',
+		'h' => 'hour',
+		'i' => 'minute',
+		's' => 'second',
+	);
+
+	// Loop through each time.
+	foreach ( $time_string_array as $key => &$time ) {
+		// Set $spacetime key as plural,
+		// else remove key from array if key isn't valid.
+		if ( $diff->$key ) {
+			$time = $diff->$key . ' ' . $time . ( $diff->$key > 1 ? 's' : '' );
+		} else {
+			unset( $time_string_array[ $key ] );
+		}
+	}
+
+	// Get first element from array.
+	$time_space = array_slice( $time_string_array, 0, 1 );
+
+	// If we have a value assume past, and attache 'ago', else just now.
+	$time_string = $time_space ? implode( ', ', $time_space ) . esc_html__( ' ago', 'tapi_tweets' ) : esc_html__( 'just now', 'tapi_tweets' );
+
+	// Output markup.
+	return $time_string;
+}
+
+/**
+ * Get media for tweet.
+ *
+ * @param object $tweet tweet object.
+ * @return array array of media if it exists.
+ */
+function tapi_get_media_url( $tweet = false ) {
+	if ( ! $tweet )
+		$tweet = $GLOBALS['tapi_tweet'];
+
+	// Set empty array.
+	$media_array = [];
+
+	if ( isset( $tweet->entities ) && isset( $tweet->entities->media ) ) {
+
+		foreach ( $tweet->entities->media as $media ) {
+			$media_array[] = $media->media_url_https
+				? $media->media_url_https
+				: $media->media_url;
+
+			return $media_array;
+		}
+	}
+
+	return $media_array;
+}
